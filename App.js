@@ -1,14 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, Dimensions, TouchableOpacity, Image } from 'react-native';
+import { StyleSheet, Text, View, Dimensions, TouchableOpacity, Image, Linking, Button  } from 'react-native';
 import { Camera } from 'expo-camera';
 import * as ImageManipulator from 'expo-image-manipulator';
 import * as MediaLibrary from 'expo-media-library';
-
+import Modal from "react-native-modal";
 
 export default function App() {
   const [hasPermission, setHasPermission] = useState(null);
   const [cameraRef, setCameraRef] = useState(null)
   const [type, setType] = useState(Camera.Constants.Type.back);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [token, setToken] = useState(null);
   const { height, width } = Dimensions.get("window");
   const maskRowHeight = Math.round((height - 200) / 30);
   const maskColWidth = (width - 200) / 2;
@@ -29,7 +31,29 @@ export default function App() {
   return (
     <View style={styles.container}>
       <Camera style={styles.camera} type={type} ref={ref => { setCameraRef(ref) }}>
-
+    {
+      token ? 
+      <Modal
+        testID={'modal'}
+        isVisible={modalVisible}
+        onBackdropPress={() => setModalVisible(false)}
+        style={styles.modal}>
+          <View style={{height:"auto", justifyContent:'space-evenly'}}>
+          <Text style={{fontSize:26, fontWeight:'bold', textAlign:'left'}}>{token.collectionName} #{token.id}</Text>
+          <Text style={{fontSize:18, textAlign:'left', color:'blue'}} onPress={() => Linking.openURL('https://opensea.io/'+token.owner)}>Owner : {token.owner}</Text>
+          <Image
+              style={{height:"75%"}}
+              source={{uri: token.imageUrl}}
+            />
+         
+          <TouchableOpacity style={{marginTop:10,borderColor:"#2081E2", borderWidth:2, backgroundColor:"white", padding:15, alignItems:'center'}} onPress={() => Linking.openURL(token.tokenUrl)}><Text style={{color:'#2081E2', fontSize:18, fontWeight:"bold"}}>View on Opensea</Text></TouchableOpacity>
+          </View>
+          
+       
+       
+      </Modal> : null
+    }
+      
         <View style={styles.maskOutter}>
 
 
@@ -123,7 +147,11 @@ export default function App() {
                 })
 
                 const result = await request.json()
-                console.log(result)
+                if(result.token) {
+                  setToken(result.token)
+                  setModalVisible(true)
+                }
+               
               }
             }}>
               <View style={{ backgroundColor: "white", marginTop: 50, padding: 15 }}>
@@ -149,6 +177,13 @@ const styles = StyleSheet.create({
   },
   camera: {
     flex: 1,
+  },
+  modal: {
+    backgroundColor:'white',
+    marginTop:200,
+    borderRadius:50,
+    margin: 0,
+    padding:15
   },
   buttonContainer: {
     flex: 1,
